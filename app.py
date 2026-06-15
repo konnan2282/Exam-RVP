@@ -134,7 +134,8 @@ def logout():
 @app.route('/books/<int:book_id>')
 def view_book(book_id):
     book = Book.query.get_or_404(book_id)
-    today = date.today()
+    # Используем UTC дату для точной синхронизации суточных логов с СУБД
+    today = datetime.utcnow().date()
     record_visit = False
 
     # УЧЕТ ПОСЕЩЕНИЙ
@@ -523,4 +524,3 @@ if __name__ == '__main__':
     # Сервер сам назначит порт через переменную окружения PORT
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-    
