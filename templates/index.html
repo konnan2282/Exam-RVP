@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная страница - Список книг{% endblock %}
+
+{% block content %}
+
+<!-- Секция: Популярные книги (Вариант 4) -->
+<div class="mb-5">
+    <h3 class="mb-3 text-secondary"><i class="fa-solid fa-fire text-danger me-2"></i>Популярные книги (за 3 месяца)</h3>
+    {% if popular_books %}
+        <div class="row row-cols-1 row-cols-md-5 g-3">
+            {% for book in popular_books %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 position-relative">
+                        <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger ms-4 mt-3" style="z-index: 10;">
+                            Топ {{ loop.index }}
+                        </span>
+                        <div class="text-center bg-light py-3 rounded-top">
+                            {% if book.cover %}
+                                <img src="{{ url_for('static', filename='covers/' + book.cover.file_name) }}" class="card-img-top" alt="Обложка" style="height: 140px; object-fit: contain;">
+                            {% else %}
+                                <div style="height: 140px;" class="d-flex align-items-center justify-content-center text-muted"><i class="fa-regular fa-image fa-2x"></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body p-2 d-flex flex-column">
+                            <h6 class="card-title text-truncate mb-1"><a href="{{ url_for('view_book', book_id=book.id) }}" class="text-decoration-none fw-bold text-dark">{{ book.title }}</a></h6>
+                            <small class="text-muted text-truncate mb-2">{{ book.author }}</small>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="badge bg-light text-dark border"><i class="fa-regular fa-eye me-1 text-primary"></i>{{ book.popular_views }}</span>
+                                <span class="text-warning small"><i class="fa-solid fa-star me-1"></i>{{ book.rating_info[0] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted small">Пока нет данных о просмотрах популярных книг.</p>
+    {% endif %}
+</div>
+
+<!-- Секция: Недавно просмотренные книги (Вариант 4) -->
+{% if recent_books %}
+<div class="mb-5">
+    <h3 class="mb-3 text-secondary"><i class="fa-regular fa-clock text-primary me-2"></i>Недавно просмотренные вами</h3>
+    <div class="row row-cols-1 row-cols-md-5 g-3">
+        {% for book in recent_books %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="text-center bg-light py-3 rounded-top">
+                        {% if book.cover %}
+                            <img src="{{ url_for('static', filename='covers/' + book.cover.file_name) }}" class="card-img-top" alt="Обложка" style="height: 120px; object-fit: contain;">
+                        {% else %}
+                            <div style="height: 120px;" class="d-flex align-items-center justify-content-center text-muted"><i class="fa-regular fa-image fa-2x"></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-2">
+                        <h6 class="card-title text-truncate mb-1"><a href="{{ url_for('view_book', book_id=book.id) }}" class="text-decoration-none text-dark">{{ book.title }}</a></h6>
+                        <small class="text-muted text-truncate mb-0">{{ book.author }}</small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<hr class="my-5">
+
+<!-- Секция: Основной список книг -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Все книги библиотеки</h2>
+</div>
+
+{% if pagination.items %}
+    <div class="table-responsive bg-white rounded shadow-sm p-3 mb-4">
+        <table class="table table-hover align-middle">
+            <thead class="table-light text-secondary">
+                <tr>
+                    <th scope="col" style="width: 5%;">#</th>
+                    <th scope="col" style="width: 35%;">Название книги</th>
+                    <th scope="col" style="width: 20%;">Жанры</th>
+                    <th scope="col" style="width: 10%;">Год</th>
+                    <th scope="col" style="width: 15%;">Рейтинг</th>
+                    <th scope="col" style="width: 15%;" class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in pagination.items %}
+                    {% set avg_rating, rev_count = book.rating_info %}
+                    <tr>
+                        <td>{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
+                        <td>
+                            <div class="fw-bold text-primary">{{ book.title }}</div>
+                            <small class="text-muted">Автор: {{ book.author }}</small>
+                        </td>
+                        <td>
+                            {% for genre in book.genres %}
+                                <span class="badge bg-secondary me-1">{{ genre.name }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ book.year }}</td>
+                        <td>
+                            <span class="text-warning"><i class="fa-solid fa-star me-1"></i>{{ avg_rating }}</span>
+                            <small class="text-muted d-block">Отзывов: {{ rev_count }}</small>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('view_book', book_id=book.id) }}" class="btn btn-outline-primary" title="Просмотр">
+                                    <i class="fa-regular fa-eye"></i>
+                                </a>
+                                
+                                {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_moderator) %}
+                                    <a href="{{ url_for('edit_book', book_id=book.id) }}" class="btn btn-outline-warning" title="Редактировать">
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </a>
+                                {% endif %}
+                                
+                                {% if current_user.is_authenticated and current_user.is_admin %}
+                                    <button class="btn btn-outline-danger" 
+                                            title="Удалить"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteBookModal"
+                                            data-book-id="{{ book.id }}"
+                                            data-book-title="{{ book.title }}">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Кнопка «Добавить книгу» строго ПОД списком книг для Администратора -->
+    {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="d-flex justify-content-start mb-4">
+            <a href="{{ url_for('add_book') }}" class="btn btn-success">
+                <i class="fa-solid fa-plus me-2"></i>Добавить книгу
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Пагинация -->
+    <nav class="mt-4" aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=pagination.prev_num) }}" tabindex="-1">Назад</a>
+            </li>
+            
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=pagination.next_num) }}">Вперед</a>
+            </li>
+        </ul>
+    </nav>
+
+{% else %}
+    <div class="alert alert-info text-center py-5">
+        <i class="fa-regular fa-folder-open fa-3x mb-3 text-secondary"></i>
+        <h5>Книги не найдены</h5>
+        <p class="text-muted">В библиотеке пока нет ни одной книги.</p>
+    </div>
+{% endif %}
+
+<!-- Модальное окно подтверждения удаления книги -->
+{% if current_user.is_authenticated and current_user.is_admin %}
+<div class="modal fade" id="deleteBookModal" tabindex="-1" aria-labelledby="deleteBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteBookModalLabel"><i class="fa-solid fa-triangle-exclamation me-2"></i>Удаление книги</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Вы уверены, что хотите удалить книгу <strong id="deleteBookTitle"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                <form id="deleteBookForm" method="POST" action="">
+                    <button type="submit" class="btn btn-danger">Да</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const deleteModal = document.getElementById('deleteBookModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const bookId = button.getAttribute('data-book-id');
+            const bookTitle = button.getAttribute('data-book-title');
+            
+            const modalBookTitle = deleteModal.querySelector('#deleteBookTitle');
+            const deleteForm = deleteModal.querySelector('#deleteBookForm');
+            
+            modalBookTitle.textContent = bookTitle;
+            deleteForm.action = '/books/' + bookId + '/delete';
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - Электронная библиотека{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Главная</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4 mb-5">
+    <!-- Левая колонка: Обложка -->
+    <div class="col-md-4 text-center">
+        {% if book.cover %}
+            <img src="{{ url_for('static', filename='covers/' + book.cover.file_name) }}" 
+                 alt="Обложка книги {{ book.title }}" 
+                 class="img-fluid rounded shadow-sm border" 
+                 style="max-height: 450px; object-fit: contain;">
+        {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center rounded border shadow-sm" style="height: 400px;">
+                <span class="text-muted"><i class="fa-regular fa-image fa-3x mb-2 d-block"></i>Нет обложки</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Правая колонка: Информация о книге -->
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold text-dark mb-1">{{ book.title }}</h1>
+        <p class="lead text-secondary mb-4">Автор: <strong>{{ book.author }}</strong></p>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <table class="table table-borderless mb-0 align-middle">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 30%;">Жанр(ы):</td>
+                            <td>
+                                {% for genre in book.genres %}
+                                    <span class="badge bg-secondary me-1">{{ genre.name }}</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Год издания:</td>
+                            <td><strong>{{ book.year }} г.</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Издательство:</td>
+                            <td>{{ book.publisher }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Объём:</td>
+                            <td>{{ book.pages_count }} стр.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Средняя оценка:</td>
+                            <td>
+                                {% set avg_rating, rev_count = book.rating_info %}
+                                <span class="text-warning fw-bold fs-5"><i class="fa-solid fa-star me-1"></i>{{ avg_rating }}</span>
+                                <span class="text-muted ms-2">({{ rev_count }} отзывов)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Описание книги (Рендеринг из Markdown) -->
+<div class="card shadow-sm mb-5">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Краткое описание книги</h5>
+    </div>
+    <div class="card-body p-4 text-secondary">
+        {{ book.short_description|markdown|safe }}
+    </div>
+</div>
+
+<!-- Блок рецензий читателей -->
+<div class="card shadow-sm mb-5">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fa-regular fa-comments me-2"></i>Рецензии читателей</h5>
+    </div>
+    <div class="card-body p-4">
+        {% set ns = namespace(has_other_reviews=false) %}
+        {% if reviews %}
+            <div class="d-flex flex-column gap-3">
+                {% for review in reviews %}
+                    {# Отображаем только рецензии других пользователей #}
+                    {% if not (current_user.is_authenticated and review.user_id == current_user.id) %}
+                        {% set ns.has_other_reviews = true %}
+                        <div class="border-bottom pb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-dark">{{ review.user.get_fio }}</strong>
+                                <span class="text-muted small">{{ review.created_at.strftime('%d.%m.%Y в %H:%M') }}</span>
+                            </div>
+                            <div class="mb-2 small">
+                                {% for i in range(5) %}
+                                    <i class="fa-solid fa-star {% if i < review.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                {% endfor %}
+                                <span class="text-muted ms-2">
+                                    {% if review.rating == 5 %}отлично
+                                    {% elif review.rating == 4 %}хорошо
+                                    {% elif review.rating == 3 %}удовлетворительно
+                                    {% elif review.rating == 2 %}неудовлетворительно
+                                    {% elif review.rating == 1 %}плохо
+                                    {% else %}ужасно
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="text-secondary small">
+                                {{ review.text|markdown|safe }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if not reviews or not ns.has_other_reviews %}
+            <div class="text-center py-3 text-muted">
+                <p class="mb-0">Других рецензий на эту книгу пока нет.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- БЛОК С РЕЦЕНЗИЕЙ АВТОРА ИЛИ КНОПКОЙ НАПИСАНИЯ (Строго внизу страницы) -->
+<div class="card shadow-sm border-0 bg-light p-4 mb-4">
+    {% if current_user.is_authenticated and current_user.role.name in ['Пользователь', 'Модератор', 'Администратор'] %}
+        {% if not has_reviewed %}
+            <!-- Если не писал ранее рецензию, отображается кнопка «Написать рецензию» -->
+            <div class="text-center">
+                <a href="{{ url_for('add_review', book_id=book.id) }}" class="btn btn-dark px-4 fw-semibold">
+                    <i class="fa-solid fa-pen-nib me-2"></i>Написать рецензию
+                </a>
+            </div>
+        {% else %}
+            <!-- Вместо кнопки отображается ЕГО собственная рецензия -->
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fa-solid fa-user-check me-2"></i>Ваша рецензия на эту книгу</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>
+                            {% for i in range(5) %}
+                                <i class="fa-solid fa-star {% if i < user_review.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                            {% endfor %}
+                            <strong class="ms-2">
+                                {% if user_review.rating == 5 %}отлично
+                                {% elif user_review.rating == 4 %}хорошо
+                                {% elif user_review.rating == 3 %}удовлетворительно
+                                {% elif user_review.rating == 2 %}неудовлетворительно
+                                {% elif user_review.rating == 1 %}плохо
+                                {% else %}ужасно
+                                {% endif %}
+                            </strong>
+                        </span>
+                        <small class="text-muted">{{ user_review.created_at.strftime('%d.%m.%Y в %H:%M') }}</small>
+                    </div>
+                    <div class="text-secondary">
+                        {{ user_review.text|markdown|safe }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% elif not current_user.is_authenticated %}
+        <div class="text-center text-muted">
+            Чтобы оставить рецензию, пожалуйста, <a href="{{ url_for('login') }}" class="fw-semibold text-primary">войдите в систему</a>.
+        </div>
+    {% else %}
+        <!-- Если пользователь аутентифицирован, но не имеет нужной роли (на случай расширения ролевой модели) -->
+        <div class="text-center text-muted">
+            Ваша роль не позволяет оставлять рецензии.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% from 'macros/book_form.html' import render_book_form %}
+
+{% block title %}Добавление книги - Электронная библиотека{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fa-solid fa-plus me-2"></i>Новая книга</h4>
+            </div>
+            <div class="card-body p-4">
+                {{ render_book_form(url_for('add_book'), genres, is_edit=false) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- EasyMDE CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    // Инициализация Markdown редактора
+    const easyMDE = new EasyMDE({
+        element: document.getElementById('short_description'),
+        spellChecker: false,
+        status: false,
+        autosave: { enabled: false }
+    });
+</script>
+{% endblock %}

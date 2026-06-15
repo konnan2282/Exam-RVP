@@ -1,0 +1,60 @@
+{% macro render_book_form(action_url, genres, book=none, is_edit=false) %}
+<form method="POST" action="{{ action_url }}" enctype="multipart/form-data" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="title" class="form-label fw-semibold">Название книги <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ book.title if book else '' }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="author" class="form-label fw-semibold">Автор <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="author" name="author" value="{{ book.author if book else '' }}" required>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label for="publisher" class="form-label fw-semibold">Издательство <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="publisher" name="publisher" value="{{ book.publisher if book else '' }}" required>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="year" class="form-label fw-semibold">Год издания <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="year" name="year" min="1000" max="2100" value="{{ book.year if book else '' }}" required>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="pages_count" class="form-label fw-semibold">Объём (в страницах) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="pages_count" name="pages_count" min="1" value="{{ book.pages_count if book else '' }}" required>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="genres" class="form-label fw-semibold">Жанры <span class="text-danger">*</span></label>
+        <select class="form-select" id="genres" name="genres" multiple required style="height: 120px;">
+            {% for genre in genres %}
+                <option value="{{ genre.id }}" 
+                    {% if book and genre in book.genres %}selected{% endif %}>
+                    {{ genre.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Зажмите клавишу <kbd>Ctrl</kbd> (или <kbd>Cmd</kbd> на Mac), чтобы выбрать несколько жанров.</div>
+    </div>
+
+    {% if not is_edit %}
+    <div class="mb-3">
+        <label for="cover" class="form-label fw-semibold">Обложка книги <span class="text-danger">*</span></label>
+        <input class="form-control" type="file" id="cover" name="cover" accept="image/*" required>
+        <div class="form-text">Поддерживаются файлы изображений (JPEG, PNG).</div>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label for="short_description" class="form-label fw-semibold">Краткое описание <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="short_description" name="short_description" rows="10" required>{{ book.short_description if book else '' }}</textarea>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Отмена</a>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </div>
+</form>
+{% endmacro %}

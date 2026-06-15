@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% from 'macros/book_form.html' import render_book_form %}
+
+{% block title %}Редактирование книги - Электронная библиотека{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fa-regular fa-pen-to-square me-2"></i>Редактирование книги: {{ book.title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                {{ render_book_form(url_for('edit_book', book_id=book.id), genres, book=book, is_edit=true) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    const easyMDE = new EasyMDE({
+        element: document.getElementById('short_description'),
+        spellChecker: false,
+        status: false,
+        autosave: { enabled: false }
+    });
+</script>
+{% endblock %}
